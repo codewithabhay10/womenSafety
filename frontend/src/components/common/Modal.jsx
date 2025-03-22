@@ -1,5 +1,4 @@
-import { Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import React, { useEffect } from 'react';
 
 const Modal = ({ 
   isOpen, 
@@ -15,48 +14,47 @@ const Modal = ({
     xl: 'max-w-4xl'
   };
   
+  // Close modal when pressing Escape key
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    if (isOpen) {
+      document.addEventListener('keydown', handleEsc);
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isOpen, onClose]);
+  
+  if (!isOpen) return null;
+  
+  // Prevent clicks inside the modal from closing it
+  const handleModalClick = (e) => {
+    e.stopPropagation();
+  };
+  
   return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={onClose}>
-        <div className="min-h-screen px-4 text-center">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-          </Transition.Child>
-
-          {/* This element is to trick the browser into centering the modal contents. */}
-          <span className="inline-block h-screen align-middle" aria-hidden="true">
-            &#8203;
-          </span>
-          
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
-          >
-            <div className={`inline-block w-full ${sizeClasses[size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg`}>
-              {title && (
-                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                  {title}
-                </Dialog.Title>
-              )}
-              {children}
-            </div>
-          </Transition.Child>
-        </div>
-      </Dialog>
-    </Transition>
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-30 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className={`${sizeClasses[size]} p-6 bg-white rounded-lg shadow-xl transform transition-all duration-300 ease-in-out`}
+        onClick={handleModalClick}
+      >
+        {title && (
+          <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+            {title}
+          </h3>
+        )}
+        {children}
+      </div>
+    </div>
   );
 };
 

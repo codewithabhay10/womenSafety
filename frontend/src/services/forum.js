@@ -31,3 +31,10 @@ export const dislikeReview = async (reviewId, userId) => {
   const response = await api.put(`/reviews/dislike/${reviewId}`, { userId })
   return response.data
 }
+
+export const deleteReview = async (reviewId, userId) => {
+  const response = await api.delete(`/reviews/${reviewId}`, { 
+    data: { userId } 
+  })
+  return response.data
+}

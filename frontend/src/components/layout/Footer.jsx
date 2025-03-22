@@ -16,7 +16,6 @@ const Footer = () => {
               <li><Link to="/map" className="text-gray-600 hover:text-primary-500">Safety Map</Link></li>
               <li><Link to="/forum" className="text-gray-600 hover:text-primary-500">Community Forum</Link></li>
               <li><Link to="/deepfake" className="text-gray-600 hover:text-primary-500">Deepfake Detection</Link></li>
-              <li><Link to="/resources" className="text-gray-600 hover:text-primary-500">Resources</Link></li>
             </ul>
           </div>
           

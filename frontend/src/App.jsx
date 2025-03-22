@@ -10,6 +10,7 @@ import DeepfakePage from './pages/DeepfakePage'
 import ProfilePage from './pages/ProfilePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import VoiceActivation from './components/layout/VoiceActivation'
 
 function App() {
   const { isAuthenticated } = useAuth()
@@ -30,6 +31,7 @@ function App() {
       </main>
       <Footer />
       {isAuthenticated && <SOSButton />}
+      {isAuthenticated && <VoiceActivation />}
     </div>
   )
 }

@@ -91,12 +91,6 @@ const LoginForm = () => {
           error={errors.password}
         />
         
-        <div className="mb-4 text-right">
-          <Link to="/forgot-password" className="text-primary-600 text-sm hover:underline">
-            Forgot password?
-          </Link>
-        </div>
-        
         <Button
           type="submit"
           className="w-full bg-primary-500 hover:bg-primary-600 text-white py-2 rounded-full"

@@ -35,7 +35,7 @@ const SOSButton = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 z-[9999]">
       {showConfirmation ? (
         <div className="bg-white rounded-lg shadow-lg p-4 mb-4 w-64">
           <p className="text-gray-800 font-medium mb-3">Send SOS alert to your emergency contacts?</p>
@@ -49,7 +49,7 @@ const SOSButton = () => {
             </button>
             <button 
               onClick={handleSOSClick}
-              className="px-4 py-2 bg-danger text-white rounded-lg hover:bg-red-700"
+              className="px-4 py-2 bg-danger hover:text-white rounded-lg hover:bg-red-700"
               disabled={sending}
             >
               {sending ? 'Sending...' : 'Confirm'}
@@ -59,7 +59,7 @@ const SOSButton = () => {
       ) : (
         <button
           onClick={handleSOSClick}
-          className="bg-danger hover:bg-red-700 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
+          className="bg-red-700 hover:bg-red-700 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
           aria-label="SOS Emergency Button"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">

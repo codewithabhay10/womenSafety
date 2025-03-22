@@ -1,148 +1,172 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import ForumPost from './ForumPost';
+import EditReviewModal from './EditReviewModal';
 import Spinner from '../common/Spinner';
+import { 
+  getAllReviews, 
+  likeReview, 
+  dislikeReview,
+  updateReview,
+  deleteReview 
+} from '../../services/forum';
 
-const PostList = ({ filter = 'all' }) => {
+const PostList = ({ filter = 'all', searchQuery = '' }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingPost, setEditingPost] = useState(null);
   const { user } = useAuth();
   
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      const response = await getAllReviews();
+      setPosts(response);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        // In a real app, you would call your API here
-        // Simulating API call with timeout
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Sample data
-        const samplePosts = [
-          {
-            id: '1',
-            author: {
-              id: '123',
-              name: 'Sarah Johnson'
-            },
-            content: 'The main paths in Central Park are well-lit and have regular security patrols. I frequently jog here in the early evening and feel safe. There are emergency phones throughout the park.',
-            location: 'Central Park, New York',
-            safetyLevel: 'safe',
-            likes: 24,
-            dislikes: 5,
-            likedBy: [],
-            dislikedBy: [],
-            createdAt: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
-          },
-          {
-            id: '2',
-            author: {
-              id: '456',
-              name: 'Madison Lee'
-            },
-            content: 'This area gets very dark after sunset with some broken street lights. I\'d recommend avoiding the side streets off Broadway after 10pm. Main street is generally okay but stay alert.',
-            location: 'Broadway & 34th St',
-            safetyLevel: 'caution',
-            likes: 17,
-            dislikes: 8,
-            likedBy: [],
-            dislikedBy: [],
-            createdAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
-          }
-        ];
-        
-        setPosts(samplePosts);
-      } catch (error) {
-        console.error('Failed to fetch posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchPosts();
   }, []);
   
-  const filteredPosts = filter === 'all' 
-    ? posts 
-    : posts.filter(post => post.safetyLevel === filter);
+  // Apply filters and search
+  const getFilteredPosts = () => {
+    // First, filter by safety level/rating
+    let filteredByRating = filter === 'all' 
+      ? posts 
+      : filter === 'safe'
+        ? posts.filter(post => post.rating === 5)
+        : filter === 'caution'
+          ? posts.filter(post => post.rating >= 3 && post.rating <= 4)
+          : posts.filter(post => post.rating <= 2); // 'avoid'
+    
+    // Then, apply search query if it exists
+    if (searchQuery.trim() === '') {
+      return filteredByRating;
+    }
+    
+    // Case-insensitive search
+    const query = searchQuery.toLowerCase();
+    
+    return filteredByRating.filter(post => {
+      // Search in location name
+      const locationMatch = post.routeName?.toLowerCase().includes(query);
+      
+      // Search in content
+      const contentMatch = post.content?.toLowerCase().includes(query);
+      
+      // Return if either matches
+      return locationMatch || contentMatch;
+    });
+  };
+  
+  const filteredPosts = getFilteredPosts();
   
   const handleLike = async (postId) => {
-    // In a real app, you would call your API here
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        const isLiked = post.likedBy.includes(user.userId);
-        const isDisliked = post.dislikedBy.includes(user.userId);
-        
-        let newLikes = post.likes;
-        let newDislikes = post.dislikes;
-        let newLikedBy = [...post.likedBy];
-        let newDislikedBy = [...post.dislikedBy];
-        
-        if (isLiked) {
-          // Unlike
-          newLikes--;
-          newLikedBy = newLikedBy.filter(id => id !== user.userId);
-        } else {
-          // Like
-          newLikes++;
-          newLikedBy.push(user.userId);
-          
-          // Remove dislike if exists
-          if (isDisliked) {
-            newDislikes--;
-            newDislikedBy = newDislikedBy.filter(id => id !== user.userId);
-          }
+    if (!user) return;
+    
+    try {
+      // Call the API to like/unlike the post
+      const response = await likeReview(postId, user.userId);
+      
+      // Update the posts state with the new like/unlike info
+      setPosts(posts.map(post => {
+        if (post._id === postId) {
+          // Update the post with the new like/dislike counts
+          return {
+            ...post,
+            likes: response.likes,
+            dislikes: response.dislikes,
+            likedBy: post.likedBy 
+              ? (post.likedBy.includes(user.userId) 
+                  ? post.likedBy.filter(id => id !== user.userId) 
+                  : [...post.likedBy, user.userId])
+              : [user.userId],
+            dislikedBy: post.dislikedBy 
+              ? post.dislikedBy.filter(id => id !== user.userId) 
+              : []
+          };
         }
-        
-        return {
-          ...post,
-          likes: newLikes,
-          dislikes: newDislikes,
-          likedBy: newLikedBy,
-          dislikedBy: newDislikedBy
-        };
-      }
-      return post;
-    }));
+        return post;
+      }));
+    } catch (error) {
+      console.error('Failed to like post:', error);
+    }
   };
   
   const handleDislike = async (postId) => {
-    // In a real app, you would call your API here
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        const isLiked = post.likedBy.includes(user.userId);
-        const isDisliked = post.dislikedBy.includes(user.userId);
-        
-        let newLikes = post.likes;
-        let newDislikes = post.dislikes;
-        let newLikedBy = [...post.likedBy];
-        let newDislikedBy = [...post.dislikedBy];
-        
-        if (isDisliked) {
-          // Undislike
-          newDislikes--;
-          newDislikedBy = newDislikedBy.filter(id => id !== user.userId);
-        } else {
-          // Dislike
-          newDislikes++;
-          newDislikedBy.push(user.userId);
-          
-          // Remove like if exists
-          if (isLiked) {
-            newLikes--;
-            newLikedBy = newLikedBy.filter(id => id !== user.userId);
-          }
+    if (!user) return;
+    
+    try {
+      // Call the API to dislike/undislike the post
+      const response = await dislikeReview(postId, user.userId);
+      
+      // Update the posts state with the new dislike/undislike info
+      setPosts(posts.map(post => {
+        if (post._id === postId) {
+          // Update the post with the new like/dislike counts
+          return {
+            ...post,
+            likes: response.likes,
+            dislikes: response.dislikes,
+            dislikedBy: post.dislikedBy 
+              ? (post.dislikedBy.includes(user.userId) 
+                  ? post.dislikedBy.filter(id => id !== user.userId) 
+                  : [...post.dislikedBy, user.userId])
+              : [user.userId],
+            likedBy: post.likedBy 
+              ? post.likedBy.filter(id => id !== user.userId) 
+              : []
+          };
         }
-        
-        return {
-          ...post,
-          likes: newLikes,
-          dislikes: newDislikes,
-          likedBy: newLikedBy,
-          dislikedBy: newDislikedBy
-        };
-      }
-      return post;
-    }));
+        return post;
+      }));
+    } catch (error) {
+      console.error('Failed to dislike post:', error);
+    }
+  };
+  
+  const handleEdit = (post) => {
+    setEditingPost(post);
+  };
+  
+  const handleEditSave = async (updatedPost) => {
+    try {
+      const response = await updateReview(updatedPost._id, {
+        userId: user.userId,
+        routeName: updatedPost.routeName,
+        content: updatedPost.content,
+        rating: updatedPost.rating
+      });
+      
+      // Update posts state with the updated post
+      setPosts(posts.map(post => 
+        post._id === updatedPost._id ? { ...post, ...response } : post
+      ));
+      
+      setEditingPost(null);
+    } catch (error) {
+      console.error('Failed to update post:', error);
+    }
+  };
+  
+  const handleDelete = async (postId) => {
+    try {
+      await deleteReview(postId, user.userId);
+      
+      // Remove the deleted post from state
+      setPosts(posts.filter(post => post._id !== postId));
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+    }
+  };
+  
+  const handleReport = () => {
+    alert('Report functionality will be implemented in a future update.');
   };
   
   if (loading) {
@@ -156,23 +180,39 @@ const PostList = ({ filter = 'all' }) => {
   if (filteredPosts.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
-        No posts found for this filter. Be the first to share information!
+        {searchQuery.trim() !== '' 
+          ? `No posts found matching "${searchQuery}". Try another search term.` 
+          : "No posts found for this filter. Be the first to share information!"}
       </div>
     );
   }
   
   return (
-    <div className="space-y-4">
-      {filteredPosts.map(post => (
-        <ForumPost
-          key={post.id}
-          post={post}
-          onLike={handleLike}
-          onDislike={handleDislike}
-          currentUserId={user?.userId}
+    <>
+      <div className="space-y-4">
+        {filteredPosts.map(post => (
+          <ForumPost
+            key={post._id}
+            post={post}
+            onLike={handleLike}
+            onDislike={handleDislike}
+            onReport={handleReport}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            currentUserId={user?.userId}
+          />
+        ))}
+      </div>
+      
+      {editingPost && (
+        <EditReviewModal
+          isOpen={!!editingPost}
+          onClose={() => setEditingPost(null)}
+          onSave={handleEditSave}
+          review={editingPost}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 };
 

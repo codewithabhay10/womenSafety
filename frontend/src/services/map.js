@@ -24,4 +24,3 @@ export const getIsochrone = async (lat, lng, timeLimit = 600, profile = 'foot') 
   })
   return response.data
 }
-

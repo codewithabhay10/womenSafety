@@ -20,7 +20,8 @@ router.get('/route', async (req, res) => {
       }
     }*/
     // Call GraphHopper API
-    const response = await axios.get(`https://graphhopper.com/api/1/route?point=${start_lat},${start_lng}&point=${end_lat},${end_lng}&profile=foot&key=${process.env.GRAPHHOPPER_API_KEY}`);
+    // Change the GraphHopper API call to include instructions:
+  const response = await axios.get(`https://graphhopper.com/api/1/route?point=${start_lat},${start_lng}&point=${end_lat},${end_lng}&profile=${profile}&instructions=true&key=${process.env.GRAPHHOPPER_API_KEY}`);
     
     res.json(response.data);
   } catch (error) {
